@@ -1,0 +1,35 @@
+{
+  "env": {
+    "gpu": "NVIDIA GeForce RTX 4090, 24564 MiB",
+    "cpu": "Model name:                              AMD Ryzen 9 7950X 16-Core Processor",
+    "nproc": "32",
+    "ram_gb": 187.8,
+    "amx": false,
+    "avx512": true,
+    "note": "amx=false → 28x headline 재현불가, 상대우위만"
+  },
+  "A1_fullgpu": {
+    "backend": "CUDA",
+    "prefill_tok_s": 10048.7,
+    "decode_tok_s": 261.5
+  },
+  "A2_mechanism_ncmoe48": {
+    "backend": "CUDA",
+    "prefill_tok_s": 508.0,
+    "decode_tok_s": 12.0
+  },
+  "A2b_partial_ncmoe24": {
+    "err": "Expecting value: line 2 column 1 (char 2)"
+  },
+  "A3_cpu_only": {
+    "backend": "CUDA",
+    "prefill_tok_s": 463.2,
+    "decode_tok_s": 7.4
+  },
+  "vram_mb": {
+    "fullgpu": 22343,
+    "mechanism": 23803
+  },
+  "H2_mechanism_speedup_vs_cpu": 1.62,
+  "H4_outputs_identical": false
+}

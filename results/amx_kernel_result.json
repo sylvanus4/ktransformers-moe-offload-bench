@@ -1,0 +1,23 @@
+{
+  "host": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "cpu": "Intel Xeon Platinum 8470 (Sapphire Rapids)",
+    "amx_bf16": true,
+    "amx_int8": true,
+    "avx512": true,
+    "nproc": 208,
+    "ram_gb": 1007,
+    "cost_per_hr_usd": 2.99
+  },
+  "measurement": {
+    "workload": "kt_kernel MoE forward, DeepSeek-V3 scale: 256 experts, hidden 7168, intermediate 2048, top-8, threads 104",
+    "comparison": "same BF16 weights, only kernel differs (AMXBF16_MOE vs AVX2BF16_MOE), same-process, decode qlen=1",
+    "AMXBF16_decode_tok_s": 145.5,
+    "AMXBF16_decode_avg_ms": 6.873,
+    "AVX2BF16_decode_tok_s": 105.5,
+    "AVX2BF16_decode_avg_ms": 9.475,
+    "amx_vs_avx2_bf16_decode_x": 1.38
+  },
+  "interpretation": "AMX 커널 자체는 동일 BF16에서 AVX2 대비 1.38x. ktransformers 28x 헤드라인은 커널 배수가 아니라 시스템 비교(GPU-attention + CPU-expert 파이프라인 vs llama.cpp CPU-only)이며, AMX는 그 안의 ~1.4x 기여 요소.",
+  "not_measured": "qlen=128 prefill 및 AMXInt8(ktransformers 실제 서빙 양자화)은 셀당 66GB 가중치 재생성으로 느려 H100 비용 절약 위해 생략. INT8 AMX는 dedicated tile 연산이라 BF16보다 큰 배수 가능(미측정)."
+}
