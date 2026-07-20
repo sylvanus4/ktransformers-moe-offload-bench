@@ -1,3 +1,5 @@
+> **정정 (2026-07-21):** 아래 오프로드 속도(1.2~3.8 tok/s)는 미최적화 경로였습니다. 정식 INT4 AMX 커널로 재측정한 값(decode 12.4 tok/s, INT4 vs BF16 3.9x)은 `experiment-5-int4-decode/`에 있습니다. 상세는 README의 CORRECTION 절.
+
 # ktransformers 실증 결과 — MoE expert-offload 메커니즘 (RunPod 4090)
 
 날짜: 2026-07-18 · 대상: kvcache-ai/ktransformers 주장 · 대리모델: Qwen3-30B-A3B (fine-grained MoE, V3 계열)

@@ -6,13 +6,38 @@ The headline numbers rest on three hidden preconditions. This repo is the full r
 
 Full write-up (Korean): https://thakicloud.github.io/ko/llmops/ktransformers-moe-offload-28x-validation/
 
-## TL;DR findings
+## CORRECTION (2026-07-21) — we measured the unoptimized path
+
+Our first pass reported offload decode at 1.2–3.8 tok/s and concluded ktransformers was "batch-only,
+too slow for interactive." That was **the pre-optimization path**, not ktransformers. Our llama.cpp
+`--n-cpu-moe` proxy copies the offload *placement* but skips the INT4 AMX kernels, MLA, and CUDA graph;
+our kt_kernel microbench used random BF16 weights, so the INT4 path was effectively off.
+
+We rebuilt the real kt-kernel on an Intel Xeon 8480+ (AMX) and re-measured decode (qlen=1, DeepSeek-V3
+geometry, MoE-only) with the correct INT4 quantization path:
+
+| Kernel | decode tok/s (V3 geom, MoE-only) |
+|---|---|
+| **AMX INT4** | **12.4** |
+| AMX INT8 | 6.0 |
+| AMX BF16 | 3.2 |
+| AVX2 BF16 | 2.9 |
+
+**INT4 vs BF16 = 3.9×.** Our original 1.2–3.8 lines up exactly with the BF16/AVX2 rows above — proof
+we measured the unoptimized path. ktransformers officially reports ~14–16 tok/s decode for DeepSeek-V3
+(INT4) on a 4090 + dual Xeon 6454S, and its SOSP25 paper documents a 4.68 tok/s pre-optimization
+baseline that matches our proxy. Also: the viral "28×" is a **prefill** throughput multiple (V0.3,
+~27.79× vs llama.cpp), never a decode number. See `experiment-5-int4-decode/`. The mechanism and
+"memory is moved not removed" findings below still stand.
+
+## TL;DR findings (mechanism; see CORRECTION above for the decode speed fix)
 
 | Measurement | Result |
 |---|---|
 | Expert-offload mechanism (experts on CPU, attention on GPU) vs pure CPU | **1.62×** decode |
 | Full-GPU vs the offload mechanism (when the model fits in VRAM) | **22×** faster |
 | AMX kernel vs AVX2 kernel (same BF16, DeepSeek-V3-scale MoE) | **1.38×** |
+| **AMX INT4 vs BF16 decode (the kernel we missed)** | **3.9×** |
 
 The "28×" is a **system comparison** (full ktransformers stack on AMX+GPU vs llama.cpp CPU-only),
 not a single kernel multiple. It decomposes into modest factors: GPU handling attention (biggest
@@ -32,6 +57,12 @@ when the model exceeds VRAM, the CPU has AMX, and the baseline is pure-CPU llama
   Compares `AMXBF16_MOE` vs `AVX2BF16_MOE` in `kt_kernel` on identical BF16 weights.
   - `amx_bench.py` — the AMX-vs-AVX2 kernel benchmark
   - `inspect_backends.py` — enumerate the kernel classes each backend exposes
+- `experiment-5-int4-decode/` — RunPod H100 + Intel Xeon Platinum 8480+ (Sapphire Rapids, AMX), 2TB RAM.
+  The correction. Rebuilds real kt-kernel (0.6.3, source) and measures decode (qlen=1) for
+  `AMXInt4_MOE` vs `AMXInt8_MOE` vs `AMXBF16_MOE` vs `AVX2BF16_MOE` on DeepSeek-V3 geometry, using the
+  proper INT4 quantization path (the earlier run had it off).
+  - `decode_int4_bench.py` — the corrected decode benchmark
+  - `SUMMARY.md`, `decode_int4.json` — results (INT4 12.4 tok/s, 3.9× over BF16)
 - `results/` — raw JSON from the runs
 - `RESULTS.md` — the detailed lab notes (Korean)
 

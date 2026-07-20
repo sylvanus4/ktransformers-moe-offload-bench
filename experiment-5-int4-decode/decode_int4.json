@@ -1,0 +1,31 @@
+{
+  "geom": {
+    "hidden": 7168,
+    "inter": 2048,
+    "topk": 8,
+    "expert_num": 32,
+    "qlen": 1,
+    "moe_layers_v3": 58
+  },
+  "threads": 112,
+  "kernels": {
+    "AMXInt4_MOE": {
+      "per_layer_us": 2613.0,
+      "v3_moe_only_decode_tok_s": 6.6
+    },
+    "AMXInt8_MOE": {
+      "per_layer_us": 4759.2,
+      "v3_moe_only_decode_tok_s": 3.62
+    },
+    "AMXBF16_MOE": {
+      "per_layer_us": 9880.7,
+      "v3_moe_only_decode_tok_s": 1.74
+    },
+    "AVX2BF16_MOE": {
+      "per_layer_us": 9382.4,
+      "v3_moe_only_decode_tok_s": 1.84
+    }
+  },
+  "int4_vs_bf16_speedup": 3.78,
+  "int4_vs_avx2_speedup": 3.59
+}
